@@ -6,12 +6,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_LONG
 import com.google.android.material.snackbar.Snackbar
 import com.mcards.sdk.auth.AuthSdk
 import com.mcards.sdk.auth.AuthSdkProvider
 import com.mcards.sdk.auth.model.auth.User
+import com.mcards.sdk.cards.CardsSdk
+import com.mcards.sdk.cards.CardsSdkProvider
 import com.mcards.sdk.core.model.AuthTokens
+import com.mcards.sdk.core.model.card.Card
 import com.mcards.sdk.core.network.SdkResult
 import com.mcards.sdk.history.HistorySdk
 import com.mcards.sdk.history.HistorySdkProvider
@@ -29,6 +34,7 @@ class DemoFragment : Fragment() {
 
     private var _binding: FragmentDemoBinding? = null
     private val binding get() = _binding!!
+    private val sdk = HistorySdkProvider.getInstance()
 
     private var userPhoneNumber = ""
     private var accessToken = ""
@@ -44,9 +50,6 @@ class DemoFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val authSdk = AuthSdkProvider.getInstance()
-
-
         val loginCallback = object : AuthSdk.LoginCallback {
             override fun onSuccess(
                 user: User,
@@ -57,7 +60,7 @@ class DemoFragment : Fragment() {
                 accessToken = tokens.accessToken
                 idToken = tokens.idToken
                 userPhoneNumber = user.userClaim.phoneNumber
-                initHistorySdk()
+                initSdks()
             }
 
             override fun onFailure(message: String) {
@@ -65,6 +68,7 @@ class DemoFragment : Fragment() {
             }
         }
 
+        val authSdk = AuthSdkProvider.getInstance()
         binding.loginBtn.setOnClickListener {
             if (userPhoneNumber.isBlank()) {
                 authSdk.login(requireContext(), loginCallback)
@@ -75,9 +79,7 @@ class DemoFragment : Fragment() {
     }
 
     @SuppressLint("CheckResult")
-    private fun initHistorySdk() {
-        val sdk = HistorySdkProvider.getInstance()
-
+    private fun initSdks() {
         sdk.init(requireContext(),
             accessToken,
             debug = true,
@@ -88,8 +90,63 @@ class DemoFragment : Fragment() {
                 }
             })
 
-        val cardId = "" //TODO get a card (from the cards SDK) and use its uuid field here
-        sdk.getPaginatedCardActivities("", 1, 20)
+        CardsSdkProvider.getInstance().init(requireActivity(),
+            accessToken,
+            debug = true,
+            useFirebase =  false,
+            object : CardsSdk.InvalidTokenCallback {
+                override fun onTokenInvalid(): String {
+                    return AuthSdkProvider.getInstance().refreshTokens().accessToken
+                }
+            })
+
+        getCards()
+    }
+
+    @SuppressLint("CheckResult")
+    private fun getCards() {
+        CardsSdkProvider.getInstance().getCardsList()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeWith(object : SingleObserver<SdkResult<List<Card>>> {
+                override fun onSubscribe(d: Disposable) {
+                    activity?.runOnUiThread {
+                        binding.progressbar.visibility = View.VISIBLE
+                    }
+                }
+
+                override fun onError(e: Throwable) {
+                    activity?.runOnUiThread {
+                        binding.progressbar.visibility = View.GONE
+                        Snackbar.make(
+                            requireView(),
+                            e.localizedMessage!!,
+                            LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                override fun onSuccess(t: SdkResult<List<Card>>) {
+                    activity?.runOnUiThread {
+                        binding.progressbar.visibility = View.GONE
+                    }
+                    t.result?.let {
+                        if (it.isNotEmpty()) {
+                            val card = it[0]
+                            getActivities(card.uuid!!)
+                        }
+                    } ?: t.errorMsg?.let {
+                        activity?.runOnUiThread {
+                            Snackbar.make(requireView(), it, LENGTH_LONG)
+                                .show()
+                        }
+                    }
+                }
+            })
+    }
+
+    @SuppressLint("CheckResult")
+    private fun getActivities(cardId: String) {
+        sdk.getPaginatedCardActivities(cardId, 1, 20)
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeWith(object : SingleObserver<SdkResult<CardActivitiesResponse>> {
                 override fun onSubscribe(d: Disposable) {
@@ -110,8 +167,10 @@ class DemoFragment : Fragment() {
                         binding.progressbar.visibility = View.GONE
                     }
 
-                    t.result?.let {
-                        val activity = it.cardActivities?.get(0)
+                    t.result?.let { result ->
+                        result.cardActivities?.get(0)?.let {
+                            getActivity(cardId, it.uuid!!)
+                        }
                     } ?: t.errorMsg?.let {
                         activity?.runOnUiThread {
                             Snackbar.make(requireView(), it, LENGTH_LONG).show()
@@ -119,8 +178,10 @@ class DemoFragment : Fragment() {
                     }
                 }
             })
+    }
 
-        val activityId = "" //TODO UUID of a known card activity associated with cardId
+    @SuppressLint("CheckResult")
+    private fun getActivity(cardId: String, activityId: String) {
         sdk.getCardActivity(cardId, activityId)
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeWith(object : SingleObserver<SdkResult<CardActivity>> {
@@ -143,8 +204,16 @@ class DemoFragment : Fragment() {
                     }
 
                     t.result?.let {
-                        val activity = it
-                        //TODO take some action with the CardActivity
+                        val cardActivity = it
+                        activity?.runOnUiThread {
+                            MaterialAlertDialogBuilder(requireContext())
+                                .setTitle("Success")
+                                .setMessage("Successfully fetched CardActivity with ID "
+                                        + cardActivity.uuid + ". Debug to inspect the data.")
+                                .setPositiveButton("Ok") { dialog, _ ->
+                                    dialog.dismiss()
+                                }.create().show()
+                        }
                     } ?: t.errorMsg?.let {
                         activity?.runOnUiThread {
                             Snackbar.make(requireView(), it, LENGTH_LONG).show()

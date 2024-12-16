@@ -27,6 +27,13 @@ dependencyResolutionManagement {
             }
         }
         maven {
+            url = uri("https://maven.pkg.github.com/Wantsa/sdk-cards-android")
+            credentials {
+                username = githubUsername.get()
+                password = githubToken.get()
+            }
+        }
+        maven {
             url = uri("https://maven.pkg.github.com/Wantsa/sdk-history-android")
             credentials {
                 username = githubUsername.get()

@@ -2,6 +2,7 @@
 agp = "8.7.3"
 historysdk = "0.0.7.5"
 authsdk = "0.0.6.7"
+cardssdk = "0.0.15.4"
 
 kotlin = "2.1.0"
 coreKtx = "1.15.0"
@@ -16,6 +17,7 @@ navigation = "2.8.5"
 [libraries]
 history-sdk = { module = "com.mcards.sdk:history", version.ref = "historysdk" }
 auth-sdk = { module = "com.mcards.sdk:auth", version.ref = "authsdk" }
+cards-sdk = { module = "com.mcards.sdk:cards", version.ref = "cardssdk" }
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
