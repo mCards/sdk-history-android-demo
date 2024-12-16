@@ -6,18 +6,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
-import androidx.paging.PagingData
+import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_LONG
 import com.google.android.material.snackbar.Snackbar
 import com.mcards.sdk.auth.AuthSdk
 import com.mcards.sdk.auth.AuthSdkProvider
 import com.mcards.sdk.auth.model.auth.User
 import com.mcards.sdk.core.model.AuthTokens
+import com.mcards.sdk.core.network.SdkResult
 import com.mcards.sdk.history.HistorySdk
 import com.mcards.sdk.history.HistorySdkProvider
-import com.mcards.sdk.history.HistoryViewModel
 import com.mcards.sdk.history.demo.databinding.FragmentDemoBinding
+import com.mcards.sdk.history.model.cardactivity.CardActivitiesResponse
 import com.mcards.sdk.history.model.cardactivity.CardActivity
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.SingleObserver
+import io.reactivex.rxjava3.disposables.Disposable
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -26,7 +29,6 @@ class DemoFragment : Fragment() {
 
     private var _binding: FragmentDemoBinding? = null
     private val binding get() = _binding!!
-    private val historyVM: HistoryViewModel by activityViewModels()
 
     private var userPhoneNumber = ""
     private var accessToken = ""
@@ -70,20 +72,13 @@ class DemoFragment : Fragment() {
                 authSdk.login(requireContext(), userPhoneNumber, loginCallback)
             }
         }
-
-        requireActivity().runOnUiThread {
-            historyVM.cardActivityResponse.observe(viewLifecycleOwner) { response ->
-                response?.getData()?.let {
-                    //TODO do something with the card activity
-                    val description = it.description //etc
-                }
-            }
-        }
     }
 
     @SuppressLint("CheckResult")
     private fun initHistorySdk() {
-        HistorySdkProvider.getInstance().init(requireContext(),
+        val sdk = HistorySdkProvider.getInstance()
+
+        sdk.init(requireContext(),
             accessToken,
             debug = true,
             useFirebase =  false,
@@ -94,13 +89,69 @@ class DemoFragment : Fragment() {
             })
 
         val cardId = "" //TODO get a card (from the cards SDK?) and use its id field here
-        historyVM.getHistoryPagingData(cardId)
-            .subscribe { cardActivities: PagingData<CardActivity> ->
-                //TODO do something with the paginated data
-            }
+        sdk.getPaginatedCardActivities("", 1, 20)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeWith(object : SingleObserver<SdkResult<CardActivitiesResponse>> {
+                override fun onSubscribe(d: Disposable) {
+                    activity?.runOnUiThread {
+                        binding.progressbar.visibility = View.VISIBLE
+                    }
+                }
+
+                override fun onError(e: Throwable) {
+                    activity?.runOnUiThread {
+                        binding.progressbar.visibility = View.GONE
+                        Snackbar.make(requireView(), e.message!!, LENGTH_LONG).show()
+                    }
+                }
+
+                override fun onSuccess(t: SdkResult<CardActivitiesResponse>) {
+                    activity?.runOnUiThread {
+                        binding.progressbar.visibility = View.GONE
+                    }
+
+                    t.result?.let {
+                        val activity = it.cardActivities?.get(0)
+                    } ?: t.errorMsg?.let {
+                        activity?.runOnUiThread {
+                            Snackbar.make(requireView(), it, LENGTH_LONG).show()
+                        }
+                    }
+                }
+            })
 
         val activityId = "" //TODO ID of a known card activity associated with cardId
-        historyVM.requestCardActivity(cardId, activityId)
+        sdk.getCardActivity(cardId, activityId)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeWith(object : SingleObserver<SdkResult<CardActivity>> {
+                override fun onSubscribe(d: Disposable) {
+                    activity?.runOnUiThread {
+                        binding.progressbar.visibility = View.VISIBLE
+                    }
+                }
+
+                override fun onError(e: Throwable) {
+                    activity?.runOnUiThread {
+                        binding.progressbar.visibility = View.GONE
+                        Snackbar.make(requireView(), e.message!!, LENGTH_LONG).show()
+                    }
+                }
+
+                override fun onSuccess(t: SdkResult<CardActivity>) {
+                    activity?.runOnUiThread {
+                        binding.progressbar.visibility = View.GONE
+                    }
+
+                    t.result?.let {
+                        val activity = it
+                        //TODO take some action with the CardActivity
+                    } ?: t.errorMsg?.let {
+                        activity?.runOnUiThread {
+                            Snackbar.make(requireView(), it, LENGTH_LONG).show()
+                        }
+                    }
+                }
+            })
     }
 
     override fun onDestroyView() {
