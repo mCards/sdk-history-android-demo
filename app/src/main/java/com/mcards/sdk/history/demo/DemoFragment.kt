@@ -88,7 +88,7 @@ class DemoFragment : Fragment() {
                 }
             })
 
-        val cardId = "" //TODO get a card (from the cards SDK?) and use its id field here
+        val cardId = "" //TODO get a card (from the cards SDK) and use its uuid field here
         sdk.getPaginatedCardActivities("", 1, 20)
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeWith(object : SingleObserver<SdkResult<CardActivitiesResponse>> {
@@ -120,7 +120,7 @@ class DemoFragment : Fragment() {
                 }
             })
 
-        val activityId = "" //TODO ID of a known card activity associated with cardId
+        val activityId = "" //TODO UUID of a known card activity associated with cardId
         sdk.getCardActivity(cardId, activityId)
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeWith(object : SingleObserver<SdkResult<CardActivity>> {
