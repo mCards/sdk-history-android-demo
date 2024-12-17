@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_LONG
 import com.google.android.material.snackbar.Snackbar
 import com.mcards.sdk.auth.AuthSdk
@@ -21,8 +20,8 @@ import com.mcards.sdk.core.network.SdkResult
 import com.mcards.sdk.history.HistorySdk
 import com.mcards.sdk.history.HistorySdkProvider
 import com.mcards.sdk.history.demo.databinding.FragmentDemoBinding
-import com.mcards.sdk.history.model.cardactivity.CardActivitiesResponse
-import com.mcards.sdk.history.model.cardactivity.CardActivity
+import com.mcards.sdk.history.model.historyactivity.HistoryActivitiesResponse
+import com.mcards.sdk.history.model.historyactivity.HistoryActivity
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.SingleObserver
 import io.reactivex.rxjava3.disposables.Disposable
@@ -146,9 +145,9 @@ class DemoFragment : Fragment() {
 
     @SuppressLint("CheckResult")
     private fun getActivities(cardId: String) {
-        sdk.getPaginatedCardActivities(cardId, 1, 20)
+        sdk.getPaginatedActivities(cardId, 1, 20)
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribeWith(object : SingleObserver<SdkResult<CardActivitiesResponse>> {
+            .subscribeWith(object : SingleObserver<SdkResult<HistoryActivitiesResponse>> {
                 override fun onSubscribe(d: Disposable) {
                     activity?.runOnUiThread {
                         binding.progressbar.visibility = View.VISIBLE
@@ -162,7 +161,7 @@ class DemoFragment : Fragment() {
                     }
                 }
 
-                override fun onSuccess(t: SdkResult<CardActivitiesResponse>) {
+                override fun onSuccess(t: SdkResult<HistoryActivitiesResponse>) {
                     activity?.runOnUiThread {
                         binding.progressbar.visibility = View.GONE
                     }
@@ -182,9 +181,9 @@ class DemoFragment : Fragment() {
 
     @SuppressLint("CheckResult")
     private fun getActivity(cardId: String, activityId: String) {
-        sdk.getCardActivity(cardId, activityId)
+        sdk.getActivity(cardId, activityId)
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribeWith(object : SingleObserver<SdkResult<CardActivity>> {
+            .subscribeWith(object : SingleObserver<SdkResult<HistoryActivity>> {
                 override fun onSubscribe(d: Disposable) {
                     activity?.runOnUiThread {
                         binding.progressbar.visibility = View.VISIBLE
@@ -198,18 +197,18 @@ class DemoFragment : Fragment() {
                     }
                 }
 
-                override fun onSuccess(t: SdkResult<CardActivity>) {
+                override fun onSuccess(t: SdkResult<HistoryActivity>) {
                     activity?.runOnUiThread {
                         binding.progressbar.visibility = View.GONE
                     }
 
                     t.result?.let {
-                        val cardActivity = it
+                        val HistoryActivity = it
                         activity?.runOnUiThread {
                             MaterialAlertDialogBuilder(requireContext())
                                 .setTitle("Success")
-                                .setMessage("Successfully fetched CardActivity with ID "
-                                        + cardActivity.uuid + ". Debug to inspect the data.")
+                                .setMessage("Successfully fetched HistoryActivity with ID "
+                                        + HistoryActivity.uuid + ". Debug to inspect the data.")
                                 .setPositiveButton("Ok") { dialog, _ ->
                                     dialog.dismiss()
                                 }.create().show()
