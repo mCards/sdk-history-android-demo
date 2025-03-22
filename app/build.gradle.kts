@@ -28,12 +28,14 @@ android {
             )
         }
     }
+
+    val javaVersion = JavaVersion.VERSION_17
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
     }
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = javaVersion.toString()
     }
     buildFeatures {
         viewBinding = true
@@ -42,10 +44,7 @@ android {
 }
 
 dependencies {
-    //implementation(libs.androidx.core.ktx)
-    //implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    //implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
 
