@@ -28,12 +28,14 @@ android {
             )
         }
     }
+
+    val javaVersion = JavaVersion.VERSION_17
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
     }
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = javaVersion.toString()
     }
     buildFeatures {
         viewBinding = true
@@ -42,18 +44,12 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
 
-    implementation(libs.auth.sdk)
-    implementation(libs.cards.sdk)
-    implementation(libs.history.sdk)
-
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    implementation(platform(libs.sdk.bom))
+    implementation(libs.sdk.auth)
+    implementation(libs.sdk.cards)
+    implementation(libs.sdk.history)
 }

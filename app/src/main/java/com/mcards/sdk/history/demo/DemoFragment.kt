@@ -26,6 +26,8 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.SingleObserver
 import io.reactivex.rxjava3.disposables.Disposable
 
+private const val TEST_PHONE_NUMBER = "4052938132"
+
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
@@ -70,7 +72,7 @@ class DemoFragment : Fragment() {
         val authSdk = AuthSdkProvider.getInstance()
         binding.loginBtn.setOnClickListener {
             if (userPhoneNumber.isBlank()) {
-                authSdk.login(requireContext(), loginCallback)
+                authSdk.login(requireContext(), TEST_PHONE_NUMBER, loginCallback)
             } else {
                 authSdk.login(requireContext(), userPhoneNumber, loginCallback)
             }
