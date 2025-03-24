@@ -57,7 +57,6 @@ dependencyResolutionManagement {
 }
 ```
 
-
 # Test User
 A basic user has been set up using a free SMS service. This user has the minimum amount of data needed to login and perform most SDK operations.
 
