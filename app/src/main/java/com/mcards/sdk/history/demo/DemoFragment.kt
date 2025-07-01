@@ -16,7 +16,7 @@ import com.mcards.sdk.cards.CardsSdk
 import com.mcards.sdk.cards.CardsSdkProvider
 import com.mcards.sdk.core.model.AuthTokens
 import com.mcards.sdk.core.model.card.Card
-import com.mcards.sdk.core.network.SdkResult
+import com.mcards.sdk.core.network.model.SdkResult
 import com.mcards.sdk.history.HistorySdk
 import com.mcards.sdk.history.HistorySdkProvider
 import com.mcards.sdk.history.demo.databinding.FragmentDemoBinding
@@ -51,7 +51,7 @@ class DemoFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val loginCallback = object : AuthSdk.LoginCallback {
+        val loginCallback = object : AuthSdk.Auth0Callback {
             override fun onSuccess(
                 user: User,
                 tokens: AuthTokens,
@@ -65,16 +65,16 @@ class DemoFragment : Fragment() {
             }
 
             override fun onFailure(message: String) {
-                Snackbar.make(view, message, Snackbar.LENGTH_LONG).show()
+                Snackbar.make(view, message, LENGTH_LONG).show()
             }
         }
 
         val authSdk = AuthSdkProvider.getInstance()
         binding.loginBtn.setOnClickListener {
             if (userPhoneNumber.isBlank()) {
-                authSdk.login(requireContext(), TEST_PHONE_NUMBER, loginCallback)
+                authSdk.auth0Authenticate(requireContext(), TEST_PHONE_NUMBER, loginCallback)
             } else {
-                authSdk.login(requireContext(), userPhoneNumber, loginCallback)
+                authSdk.auth0Authenticate(requireContext(), userPhoneNumber, loginCallback)
             }
         }
     }
@@ -87,7 +87,7 @@ class DemoFragment : Fragment() {
             useFirebase =  false,
             object : HistorySdk.InvalidTokenCallback {
                 override fun onTokenInvalid(): String {
-                    return AuthSdkProvider.getInstance().refreshTokens().accessToken
+                    return AuthSdkProvider.getInstance().refreshAuth0Tokens().accessToken
                 }
             })
 
@@ -97,7 +97,7 @@ class DemoFragment : Fragment() {
             useFirebase =  false,
             object : CardsSdk.InvalidTokenCallback {
                 override fun onTokenInvalid(): String {
-                    return AuthSdkProvider.getInstance().refreshTokens().accessToken
+                    return AuthSdkProvider.getInstance().refreshAuth0Tokens().accessToken
                 }
             })
 
@@ -169,7 +169,7 @@ class DemoFragment : Fragment() {
                     }
 
                     t.result?.let { result ->
-                        result.cardActivities?.get(0)?.let {
+                        result.historyActivities?.get(0)?.let {
                             getActivity(cardId, it.uuid!!)
                         }
                     } ?: t.errorMsg?.let {
@@ -205,12 +205,11 @@ class DemoFragment : Fragment() {
                     }
 
                     t.result?.let {
-                        val HistoryActivity = it
                         activity?.runOnUiThread {
                             MaterialAlertDialogBuilder(requireContext())
                                 .setTitle("Success")
                                 .setMessage("Successfully fetched HistoryActivity with ID "
-                                        + HistoryActivity.uuid + ". Debug to inspect the data.")
+                                        + it.uuid + ". Debug to inspect the data.")
                                 .setPositiveButton("Ok") { dialog, _ ->
                                     dialog.dismiss()
                                 }.create().show()
