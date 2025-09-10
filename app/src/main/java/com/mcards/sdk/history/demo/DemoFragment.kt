@@ -17,6 +17,7 @@ import com.mcards.sdk.cards.CardsSdkProvider
 import com.mcards.sdk.core.model.AuthTokens
 import com.mcards.sdk.core.model.card.Card
 import com.mcards.sdk.core.network.model.SdkResult
+import com.mcards.sdk.core.util.LoggingCallback
 import com.mcards.sdk.history.HistorySdk
 import com.mcards.sdk.history.HistorySdkProvider
 import com.mcards.sdk.history.demo.databinding.FragmentDemoBinding
@@ -98,6 +99,20 @@ class DemoFragment : Fragment() {
                     return AuthSdkProvider.getInstance().refreshAuth0Tokens().accessToken
                 }
             })
+
+        val loggingCallback = object : LoggingCallback {
+            override fun log(t: Throwable) {
+                //TODO log exception
+            }
+
+            override fun log(msg: String) {
+                //TODO log message
+            }
+        }
+
+        //optional, to use your standard logging methods. Needs to be set on each sdk individually
+        sdk.setLoggingCallback(loggingCallback)
+        CardsSdkProvider.getInstance().setLoggingCallback(loggingCallback)
 
         getCards()
     }
