@@ -1,7 +1,10 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
 }
+
+val javaVersion = JavaVersion.VERSION_17
 
 android {
     namespace = "com.mcards.sdk.history.demo"
@@ -28,18 +31,19 @@ android {
             )
         }
     }
-
-    val javaVersion = JavaVersion.VERSION_17
     compileOptions {
         sourceCompatibility = javaVersion
         targetCompatibility = javaVersion
     }
-    kotlinOptions {
-        jvmTarget = javaVersion.toString()
-    }
     buildFeatures {
         viewBinding = true
         buildConfig = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.fromTarget(javaVersion.toString())
     }
 }
 
